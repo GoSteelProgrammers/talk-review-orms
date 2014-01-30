@@ -1,0 +1,270 @@
+Golang ORM Survey
+A survey of the current state of Golang ORMs
+14:00 30 Jan 2014
+Tags: ORM
+
+Jesse Szwedko
+Software Engineer, ModCloth Inc.
+j.szwedko@modcloth.com
+
+* Why ORMs?
+- Database agnostic
+- Eliminate boilerplate required for database persistance
+- Additional hooks into data lifecycle (e.g. validation before persistence)
+
+* Evaluation metrics
+- CRUD actions (struct/query mapping)
+- Complex query creation
+- SQL Sanitization
+- Relationships
+- Data lifecycle hooks
+- Schema migrations
+
+* ORMs
+- [[https://github.com/coopernurse/gorp][coopernurse/gorp]]
+- [[https://github.com/eaigner/hood][eaigner/hood]]
+- [[https://github.com/coocood/qbs][coocood/qbs]]
+- [[https://github.com/astaxie/beedb][astaxie/beedb]]
+- [[https://upper.io/db][upper.io/db]]
+- [[https://github.com/jinzhu/gorm][jinzhu/gorm]]
+- [[https://github.com/lunny/xorm][lunny/xorm]]
+- Special mention (don't title themselves ORMs): [[https://github.com/jmoiron/sqlx][jmoiron/sqlx]], [[https://github.com/jaekwon/go-modeldb][jaekwon/go-modeldb]], [[https://github.com/eaigner/jet][eaigner/jet]]
+
+* coopernurse/gorp
+- [[https://github.com/coopernurse/gorp][Homepage]]
+- [[http://godoc.org/github.com/coopernurse/gorp][Godoc]]
+- Supports MySQL, PostgresSQL, SQLite
+
+* coopernurse/gorp CRUD
+.code gorp/crud.go /START STRUCT/,/END STRUCT/
+.code gorp/crud.go /START REGISTER/,/END REGISTER/
+.play gorp/crud.go /START CODE/,/END CODE/
+
+* coopernurse/gorp Complex query creation
+.code gorp/query.go /START STRUCT/,/END STRUCT/
+.play gorp/query.go /START CODE/,/END CODE/
+
+* coopernurse/gorp SQL Migration
+- `dbmap.CreateTables()`
+- `dbmap.CreateTablesIfNotExists()`
+- All or nothing
+
+* coopernurse/gorp Hooks
+- PostGet
+- PreInsert
+- PostInsert
+- PreUpdate
+- PostUpdate
+- PreDelete
+- PostDelete
+
+* coopernurse/gorp Notes
+- Supports optimistic locking via `version` field
+- No relationships; only allows query to struct mapping
+- Contains helper methods such as `SelectNullStr`
+- `jmoiron/modl` forks `coopernurse/gorp` and swaps out `database/sql` persistence layer with `jmoiron/sqlx`
+
+* eaigner/hood
+- [[https://github.com/eaigner/hood][Homepage]]
+- [[http://godoc.org/github.com/eaigner/hood][Godoc]]
+- Supports PostgreSQL and MySQL
+
+* eaigner/hood CRUD
+.code hood/crud.go /START STRUCT/,/END STRUCT/
+.code hood/crud.go /START REGISTER/,/END REGISTER/
+.play hood/crud.go /START CODE/,/END CODE/
+
+* eaigner/hood Complex query creation
+.code hood/query.go /START STRUCT/,/END STRUCT/
+.play hood/query.go /START CODE/,/END CODE/
+
+* eaigner/hood SQL Migration
+- More traditional migrations
+  func (m *M) CreateUserTable_1357605106_Up(hd *hood.Hood) {
+    type Users struct {
+      Id      hood.Id
+        First   string
+        Last    string
+    }
+    hd.CreateTable(&Users{})
+  }
+- Provides tool for creating/running migrations (up and down)
+- Requires JSON database config
+- Outputs `schema.go` file with current database state in Go
+- Also supports `CreateTable(&User)`
+
+* eaigner/hood Hooks
+- Before/AfterSave
+- Before/AfterInsert
+- Before/AfterUpdate
+- Before/AfterDelete
+- Allows specification of simple validations (presence, length, etc.) in struct field tag. Also calls any method starting with `Validate` on model.
+
+* eaigner/hood Notes
+- Maintains fields with type `hood.Created` and `hood.Updated`
+- Chaining is on main struct `Hood`
+
+* coocood/qbs
+- [[https://github.com/coocood/qbs][Homepage]]
+- [[http://godoc.org/github.com/coocood/qbs][Godoc]]
+- Supports MySQL, PosgreSQL and SQLite3
+
+* coocood/qbs CRUD
+.code qbs/crud.go /START STRUCT/,/END STRUCT/
+.play qbs/crud.go /START CODE/,/END CODE/
+
+* coocood/qbs Complex query creation
+.code qbs/query.go /START STRUCT/,/END STRUCT/
+.play qbs/query.go /START CODE/,/END CODE/
+
+* coocood/qbs SQL Migration
+- `migration.CreateTablesIfNotExists(&User)`
+- `dbmap.CreateTablesIfNotExists()`
+- Will create indexes on struct fields tagged with `index`, `unique` or structs with `Indexes()` defined
+- All or nothing
+
+* coocood/qbs Relationships
+- Handles 1:1 relationships (struct field can be a pointer to another struct)
+.code qbs/relationship.go /START STRUCT/,/END STRUCT/
+.play qbs/relationship.go /START CODE/,/END CODE/
+
+* coocood/qbs Hooks
+- `Validate()` if defined on struct (called before insert or update)
+
+* coocood/qbs Notes
+- Caches *all* prepared statemnts
+- Substitues prepare markers albeit naively (iterates over characters)
+- Has additional struct field tags for specifying metadata such as indexes, lengths, default, type
+- Can only have one database connection
+
+* astaxie/beedb
+- [[https://github.com/astaxie/beedb][Homepage]]
+- [[http://godoc.org/github.com/astaxie/beedb][Godoc]]
+- Supports Mysql, SQLite, PostgreSQL, DB2, MS ADODB, ODBC, Oracle
+
+* astaxie/beedb CRUD
+.code beedb/crud.go /START STRUCT/,/END STRUCT/
+.play beedb/crud.go /START CODE/,/END CODE/
+
+* astaxie/beedb Complex query creation
+.code beedb/query.go /START STRUCT/,/END STRUCT/
+.play beedb/query.go /START CODE/,/END CODE/
+
+* astaxie/beedb SQL Migration
+- `dbmap.CreateTables()`
+- `dbmap.CreateTablesIfNotExists()`
+- All or nothing
+
+* astaxie/beedb Notes
+- Small
+- No hooks
+- No relationships; only allows query to struct mapping
+- No migrations
+- Expects field names to be snake_case
+- Only inserts structs if PK field is 0
+- Chaining occurs on main struct (`Model`) so you can only have one chain at a time
+
+* upper.io/db (replaces gosexy/db)
+- [[https://upper.io/db][Homepage]]
+- [[http://godoc.org/upper.io/db][Godoc]]
+- Supports SQLite, MySQL, PostgresSQL, MongoDB
+
+* upper.io/db CRUD
+.code upper.io/crud.go /START STRUCT/,/END STRUCT/
+.play upper.io/crud.go /START CODE/,/END CODE/
+
+* upper.io/db Complex query creation
+.code upper.io/query.go /START STRUCT/,/END STRUCT/
+.play upper.io/query.go /START CODE/,/END CODE/
+
+* upper.io/db Notes
+- Uses [[https://github.com/gosexy/to][gosexy-to]] to convert types to expected types when serializing and deserializing which just returns zero value if it can't convert the types
+- No data lifecycle hooks
+- No schema migration management
+- No relationships; only allows struct to table mapping
+- Allows for iteration over result sets
+
+* jinzhu/gorm
+- [[https://github.com/jinzhu/gorm][Homepage]]
+- [[http://godoc.org/github.com/jinzhu/gorm][Godoc]]
+- Supports MySQL, PostgreSQL, SQLite
+
+* jinzhu/gorm CRUD
+.code gorm/crud.go /START STRUCT/,/END STRUCT/
+.play gorm/crud.go /START CODE/,/END CODE/
+
+* jinzhu/gorm Complex query creation
+.code gorm/query.go /START STRUCT/,/END STRUCT/
+.play gorm/query.go /START CODE/,/END CODE/
+
+* jinzhu/gorm SQL Migration
+- `CreateTable`/`DropTable` accept structs
+- `Automigrate` will add missing columns, but not delete
+
+* jinzhu/gorm Hooks
+- BeforeSave
+- BeforeCreate
+- AfterCreate
+- AfterSave
+- BeforeSave
+- BeforeUpdate
+- AfterUpdate
+- AfterSave
+- BeforeDelete
+- AfterDelete
+- AfterFind
+
+* jinzhu/gorm Notes
+- Allows for SQL types to be specified as struct field tags
+- Assumes record exists if PK is set
+- Chaining allows definition of scopes
+  func AmountGreaterThan1000(d *gorm.DB) *gorm.DB {
+    d.Where("amount > ?", 1000)
+  }
+  func PaidWithCod(d *gorm.DB) *gorm.DB {
+    d.Where("pay_mode_sign = ?", "C")
+  }
+  db.Scopes(AmountGreaterThan1000, PaidWithCod).Find(&orders)
+- Has API for scanning row query into struct
+- Supports keeping `CreatedAt`/`UpdatedAt`/`DeletedAt` (soft-delete) up-to-date
+
+* lunny/xorm
+- [[https://github.com/lunny/xorm][Homepage]]
+- [[http://godoc.org/github.com/lunny/xorm][Godoc]]
+- Supports MySQL, PostgresSQL, SQLite, MSSQL
+
+* lunny/xorm CRUD
+.code xorm/crud.go /START STRUCT/,/END STRUCT/
+.play xorm/crud.go /START CODE/,/END CODE/
+
+* lunny/xorm Complex query creation
+.code xorm/query.go /START STRUCT/,/END STRUCT/
+.play xorm/query.go /START CODE/,/END CODE/
+
+* lunny/xorm SQL Migration
+- `engine.CreateTables()`
+- All or nothing
+
+* lunny/xorm Hooks
+- PostGet
+- PreInsert
+- PostInsert
+- PreUpdate
+- PostUpdate
+- PreDelete
+- PostDelete
+
+* lunny/xorm Notes
+- Allows for iteration of result set
+- Will generate 'model' files from database via `xorm` command
+- Comes with LRU cache to cache variable amount of records
+- Supports optimistic locking via `version` fields
+- Supports struct tags to create indexes
+- Supports Created/Updated timestamps
+
+* Overall notes
+- Legacy database support is lacking
+- Primary key is forced to generally be an integer
+- APIs are remarkable similar
+- [[https://bitbucket.org/liamstask/goose][liamstask/goose]] Database migration tool (most ORMs' migration facilities are non-existent or simple/additive-only)
+- See [[http://jmoiron.net/blog/golang-orms/]] for some more info about some of the ORMs discussed
