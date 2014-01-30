@@ -70,13 +70,31 @@ j.szwedko@modcloth.com
 - Supports PostgreSQL and MySQL
 
 * eaigner/hood CRUD
-.code hood/crud.go /START STRUCT/,/END STRUCT/
-.code hood/crud.go /START REGISTER/,/END REGISTER/
-.play hood/crud.go /START CODE/,/END CODE/
+  type User struct {
+    Id        int    `db:"id"`
+    FirstName string `db:"first_name"`
+    LastName  string `db:"last_name"`
+    Age       int    `db:"age"`
+  }
+
+  hd.Save(&User{Id: 1, FirstName: "John", LastName: "Doe"})
+
+  hd.Where("id", "=", 1)
+
+  user.FirstName = "James"
+  hd.Save(user)
+
+  hd.Delete(user)
 
 * eaigner/hood Complex query creation
-.code hood/query.go /START STRUCT/,/END STRUCT/
-.play hood/query.go /START CODE/,/END CODE/
+  type User struct {
+    Id        int    `db:"id"`
+    FirstName string `db:"first_name"`
+    LastName  string `db:"last_name"`
+    Age       int    `db:"age"`
+  }
+
+  hd.Where("last_name", "=", "Doe").Or("age", "<", 12).OrderBy("age").Limit(2).Find(&users)
 
 * eaigner/hood SQL Migration
 - More traditional migrations
