@@ -1,4 +1,4 @@
-Golang ORM Survey
+Golang ORMs
 A survey of the current state of Golang ORMs
 14:00 30 Jan 2014
 Tags: ORM
@@ -29,6 +29,41 @@ j.szwedko@modcloth.com
 - [[https://github.com/jinzhu/gorm][jinzhu/gorm]]
 - [[https://github.com/lunny/xorm][lunny/xorm]]
 - Special mention (don't title themselves ORMs): [[https://github.com/jmoiron/sqlx][jmoiron/sqlx]], [[https://github.com/jaekwon/go-modeldb][jaekwon/go-modeldb]], [[https://github.com/eaigner/jet][eaigner/jet]]
+
+* database/sql
+
+  type User struct {
+    Id        int
+    FirstName string
+    LastName  string
+    Age       int
+  }
+
+  db, _ := sql.Open('sqlite3', 'sqlite:///tmp/tmp.db')
+
+* database/sql CRUD
+
+  db.Exec(
+    "INSERT INTO users (first_name, last_name, age) VALUES (?, ?, ?)",
+    "John", "Doe", 25
+  )
+
+  row := db.QueryRow("SELECT id, first_name, last_name, age FROM users WHERE id = ?", 1)
+
+  row.Scan(&user.Id, &user.FirstName, &user.LastName, &user.Age)
+
+  user.FirstName = "James"
+
+  db.Exec(
+    "UPDATE users SET first_name=?, last_name=?, age=? WHERE id = ?",
+    user.Id, user.FirstName, user.LastName, user.Age
+  )
+
+  db.Exec(
+    "DELETE FROM users WHERE id = ?",
+    user.Id
+  )
+
 
 * coopernurse/gorp
 - [[https://github.com/coopernurse/gorp][Homepage]]
@@ -61,7 +96,6 @@ j.szwedko@modcloth.com
 * coopernurse/gorp Notes
 - Supports optimistic locking via `version` field
 - No relationships; only allows query to struct mapping
-- Contains helper methods such as `SelectNullStr`
 - `jmoiron/modl` forks `coopernurse/gorp` and swaps out `database/sql` persistence layer with `jmoiron/sqlx`
 
 * eaigner/hood
@@ -71,10 +105,10 @@ j.szwedko@modcloth.com
 
 * eaigner/hood CRUD
   type User struct {
-    Id        int    `db:"id"`
-    FirstName string `db:"first_name"`
-    LastName  string `db:"last_name"`
-    Age       int    `db:"age"`
+    Id        hood.Id `db:"id"`
+    FirstName string  `db:"first_name"`
+    LastName  string  `db:"last_name"`
+    Age       int     `db:"age"`
   }
 
   hd.Save(&User{Id: 1, FirstName: "John", LastName: "Doe"})
@@ -136,8 +170,9 @@ j.szwedko@modcloth.com
 .play qbs/query.go /START CODE/,/END CODE/
 
 * coocood/qbs SQL Migration
-- `migration.CreateTablesIfNotExists(&User)`
-- `dbmap.CreateTablesIfNotExists()`
+- `migration.CreateIndexIfNotExists()`
+- `migration.CreateTableIfNotExists()`
+- `migration.DropTable(&User)`
 - Will create indexes on struct fields tagged with `index`, `unique` or structs with `Indexes()` defined
 - All or nothing
 
@@ -281,8 +316,11 @@ j.szwedko@modcloth.com
 - Supports Created/Updated timestamps
 
 * Overall notes
+- No lazy loading
 - Legacy database support is lacking
+- Association traversal and query is generally non-existent
 - Primary key is forced to generally be an integer
 - APIs are remarkable similar
 - [[https://bitbucket.org/liamstask/goose][liamstask/goose]] Database migration tool (most ORMs' migration facilities are non-existent or simple/additive-only)
+- Promising start!
 - See [[http://jmoiron.net/blog/golang-orms/]] for some more info about some of the ORMs discussed
