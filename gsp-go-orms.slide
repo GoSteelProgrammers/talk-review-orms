@@ -278,7 +278,6 @@ j.szwedko@modcloth.com
     d.Where("pay_mode_sign = ?", "C")
   }
   db.Scopes(AmountGreaterThan1000, PaidWithCod).Find(&orders)
-- Has API for scanning row query into struct
 - Supports keeping `CreatedAt`/`UpdatedAt`/`DeletedAt` (soft-delete) up-to-date
 
 * lunny/xorm
